@@ -1,0 +1,11 @@
+python train_classifier.py \
+    --model_name "xlm-roberta-base" \
+    --dataset_name "sameearif/CSB_Classifier" \
+    --output_dir "./experiments/csb_run_v1" \
+    --learning_rate 2e-5 \
+    --batch_size 16 \
+    --epochs 10 \
+    --weight_decay 0.01 \
+    --seed 42 \
+    --push_to_hub \
+    --hub_model_id "sameearif/xlm-roberta-base-csb"
