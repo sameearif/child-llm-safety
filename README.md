@@ -1,4 +1,3 @@
-````markdown
 # 🧸 LlamaPlushie & Child Safety Benchmark (CSB)
 
 This repository contains the official implementation for **LlamaPlushie**, a family of open-source Large Language Models (LLMs) aligned for **safe, developmentally appropriate, and empathetic interactions with children**.
@@ -24,7 +23,6 @@ It also includes the **Child Safety Benchmark (CSB)** — a novel evaluation sui
 ├── train_classifier.py        # Training script for the BERT-based safety classifier
 ├── train.sh                   # Shell script to launch classifier training
 └── utils.py                   # Helper functions, model mappings, and data loading
-````
 
 ---
 
