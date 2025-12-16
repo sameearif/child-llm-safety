@@ -1,0 +1,38 @@
+### model
+model_name_or_path: meta-llama/Meta-Llama-3-8B-Instruct
+trust_remote_code: true
+
+### method
+stage: sft
+do_train: true
+finetuning_type: lora
+lora_rank: 16             # Increased to 16 to match your DPO/KTO config (optional, but good for consistency)
+lora_alpha: 32            # Standard scaling (2x rank)
+lora_target: all
+
+### dataset
+dataset: CSB_SFT          # Assumed name for your gold label dataset (ensure this is in dataset_info.json)
+template: llama3
+cutoff_len: 2048
+overwrite_cache: true
+preprocessing_num_workers: 16
+dataloader_num_workers: 4
+
+### output
+output_dir: saves/llama3-8b/lora/sft_gold
+logging_steps: 10
+save_steps: 100
+plot_loss: true
+overwrite_output_dir: true
+save_only_model: false
+report_to: none
+
+### train
+per_device_train_batch_size: 8
+gradient_accumulation_steps: 2    # Effective batch size = 16
+learning_rate: 1.0e-4             # Standard SFT learning rate
+num_train_epochs: 2.0             # Set to 2 epochs as requested
+lr_scheduler_type: cosine
+warmup_ratio: 0.1
+bf16: true
+ddp_timeout: 180000000

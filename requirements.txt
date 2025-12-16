@@ -10,3 +10,7 @@ accelerate
 datasets
 evaluate
 scikit-learn
+protobuf
+sentencepiece
+peft
+vllm

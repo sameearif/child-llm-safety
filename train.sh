@@ -1,11 +1,13 @@
 python train_classifier.py \
-    --model_name "xlm-roberta-base" \
-    --dataset_name "sameearif/CSB_Classifier" \
+    --model_name "google-bert/bert-large-uncased" \
+    --dataset_name "sameearif/CSB-Classifier" \
     --output_dir "./experiments/csb_run_v1" \
-    --learning_rate 2e-5 \
-    --batch_size 16 \
+    --learning_rate 1e-5 \
+    --batch_size 8 \
+    --gradient_accumulation_steps 2 \
     --epochs 10 \
     --weight_decay 0.01 \
+    --max_length 512 \
     --seed 42 \
     --push_to_hub \
-    --hub_model_id "sameearif/xlm-roberta-base-csb"
+    --hub_model_id "sameearif/bert-large-csb"

@@ -14,7 +14,10 @@ MODEL_MAP = {
     'Qwen/Qwen3-32B': 'Qwen-3-32B',
     'gpt-5.1': 'GPT-5.1',
     'claude-sonnet-4-5': 'Claude-Sonnet-4.5',
-    'gemini-3-pro-preview': 'Gemini-3-Pro'
+    'gemini-3-pro-preview': 'Gemini-3-Pro',
+    'sameearif/LlamaPlushie-3.1-8B-KTO': 'LlamaPlushie-3-8B-KTO',
+    'sameearif/LlamaPlushie-3.1-8B-DPO': 'LlamaPlushie-3-8B-DPO',
+    'sameearif/LlamaPlushie-3.1-8B-SFT': 'LlamaPlushie-3-8B-SFT'
 }
 
 def load_dataset(file_name):

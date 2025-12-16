@@ -41,7 +41,10 @@ def main():
                 'deepseek-ai/DeepSeek-V3.1',
                 'deepseek-ai/DeepSeek-R1-0528',
                 'Qwen/Qwen3-14B',
-                'Qwen/Qwen3-32B'
+                'Qwen/Qwen3-32B',
+                'sameearif/LlamaPlushie-3.1-8B-KTO',
+                'sameearif/LlamaPlushie-3.1-8B-DPO',
+                'sameearif/LlamaPlushie-3.1-8B-SFT'
             ],
         required=True, help='Model name, e.g., gpt-5 or llama-3')
     args = parser.parse_args()

@@ -1,0 +1,38 @@
+### model
+model_name_or_path: meta-llama/Llama-3.1-8B-Instruct
+trust_remote_code: true
+
+### method
+stage: kto
+do_train: true
+finetuning_type: lora
+lora_rank: 16              # Increased for better behavioral learning
+lora_alpha: 32             # Standard scaling (2x Rank)
+lora_dropout: 0.05         # Helps prevent overfitting
+lora_target: all
+pref_beta: 0.2             # 0.1 is standard for KTO
+
+### dataset
+dataset: CSB_KTO_Train     # Make sure this is registered in dataset_info.json!
+template: llama3
+cutoff_len: 2048
+overwrite_cache: true
+preprocessing_num_workers: 16
+
+### output
+output_dir: saves/llama3-8b/lora/kto
+logging_steps: 10
+save_steps: 100            # Save more often since dataset is small
+plot_loss: true
+overwrite_output_dir: true
+report_to: none
+
+### train
+per_device_train_batch_size: 8         # Increased to 2 (Effective batch = 16)
+gradient_accumulation_steps: 1          # 2 * 8 = 16. Good stable batch size.
+learning_rate: 1.0e-6                   # 5e-6 is very slow. 1e-5 is standard for LoRA.
+num_train_epochs: 5.0                   # 3 epochs is best for this data size
+lr_scheduler_type: cosine
+warmup_ratio: 0.1
+bf16: true
+ddp_timeout: 180000000

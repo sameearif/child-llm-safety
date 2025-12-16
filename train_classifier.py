@@ -2,6 +2,7 @@ import argparse
 import logging
 import os
 import sys
+import string  # Added for punctuation removal
 import numpy as np
 import evaluate
 from datasets import load_dataset
@@ -36,10 +37,12 @@ def parse_args():
     # Hyperparameters
     parser.add_argument("--learning_rate", type=float, default=2e-5, help="Learning rate")
     parser.add_argument("--batch_size", type=int, default=16, help="Batch size for training and eval")
+    # NEW: Gradient Accumulation Steps
+    parser.add_argument("--gradient_accumulation_steps", type=int, default=1, help="Number of updates steps to accumulate before performing a backward/update pass.")
     parser.add_argument("--epochs", type=int, default=5, help="Number of training epochs")
     
     # Auto-calculate max_length if not provided
-    parser.add_argument("--max_length", type=int, default=None, help="Max token length. If None, calculates from data.")
+    parser.add_argument("--max_length", type=int, default=512, help="Max token length. If None, calculates from data.")
     
     parser.add_argument("--weight_decay", type=float, default=0.01, help="Weight decay")
     parser.add_argument("--seed", type=int, default=42, help="Random seed for reproducibility")
@@ -87,32 +90,22 @@ def main():
         dataset["train"] = split["train"]
         dataset["validation"] = split["test"]
 
+    # --- 1.5 Clean Data (Lowercase + Remove Punctuation) ---
+    logger.info("Applying text cleaning (lowercase + punctuation removal)...")
+
+    def clean_text(example):
+        text_column = "text" if "text" in example else "sentence"
+        text = example[text_column]
+        text = text.lower()
+        text = text.translate(str.maketrans('', '', string.punctuation))
+        example[text_column] = text
+        return example
+
+    dataset = dataset.map(clean_text)
+
     # --- 2. Prepare Tokenizer ---
     logger.info(f"Loading tokenizer: {args.model_name}")
     tokenizer = AutoTokenizer.from_pretrained(args.model_name)
-
-    # --- 3. Calculate Max Length (if None) ---
-    if args.max_length is None:
-        logger.info("max_length is None. Calculating optimal length from dataset...")
-        
-        sample = dataset["train"][0]
-        text_column = "text" if "text" in sample else "sentence"
-        
-        # Fast token count estimation
-        def get_token_len(example):
-            return {"len": len(tokenizer(example[text_column], truncation=False)["input_ids"])}
-        
-        logger.info("Scanning training data for sequence lengths...")
-        train_lengths = dataset["train"].map(
-            get_token_len, 
-            batched=False, 
-            remove_columns=dataset["train"].column_names
-        )
-        
-        # args.max_length = max(train_lengths["len"])
-        args.max_length = 512
-
-        logger.info(f"Set max_length to {args.max_length}")
 
     def preprocess_function(examples):
         text_column = "text" if "text" in examples else "sentence"
@@ -127,16 +120,13 @@ def main():
     tokenized_datasets = dataset.map(preprocess_function, batched=True)
 
     # --- 4. Prepare Model ---
-    # Auto-detect labels
     label_list = dataset["train"].unique("label")
     label_list.sort()
     num_labels = len(label_list)
     
-    # Map Labels (Adjust if you have different classes)
     id2label = {0: "Rejected", 1: "Accepted"}
     label2id = {"Rejected": 0, "Accepted": 1}
     
-    # Fallback for multi-class
     if num_labels != 2:
         id2label = {i: f"LABEL_{i}" for i in range(num_labels)}
         label2id = {v: k for k, v in id2label.items()}
@@ -146,7 +136,8 @@ def main():
         args.model_name,
         num_labels=num_labels,
         id2label=id2label,
-        label2id=label2id
+        label2id=label2id,
+        use_safetensors=True
     )
 
     # --- 5. Training Arguments ---
@@ -155,11 +146,14 @@ def main():
         learning_rate=args.learning_rate,
         per_device_train_batch_size=args.batch_size,
         per_device_eval_batch_size=args.batch_size,
+        # Pass gradient accumulation steps here
+        gradient_accumulation_steps=args.gradient_accumulation_steps,
         num_train_epochs=args.epochs,
         weight_decay=args.weight_decay,
         eval_strategy="epoch",  
         save_strategy="epoch",        
         load_best_model_at_end=True,
+        bf16=True,
         metric_for_best_model="f1",   
         save_total_limit=2,           
         push_to_hub=args.push_to_hub,
@@ -190,8 +184,6 @@ def main():
     logger.info(f"Evaluation results: {eval_results}")
 
     # --- 7. Save & Push Best Model ---
-    
-    # Save Best Model Locally to specific folder
     model_slug = args.model_name.split("/")[-1]
     best_model_dir = os.path.join(args.output_dir, f"{model_slug}_best")
     
@@ -199,10 +191,8 @@ def main():
     trainer.save_model(best_model_dir)
     tokenizer.save_pretrained(best_model_dir)
 
-    # Push Best Model to Hub
     if args.push_to_hub:
         logger.info("Pushing BEST model to Hugging Face Hub...")
-        # Since load_best_model_at_end=True, trainer.push_to_hub() uses the best weights currently in memory
         trainer.push_to_hub(commit_message="Training complete: Pushing Best Model")
         logger.info(f"Successfully pushed model to: {args.hub_model_id}")
 
